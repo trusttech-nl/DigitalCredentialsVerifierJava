@@ -28,7 +28,6 @@ After that, artifact will be available in:
 <dependency>
     <groupId>nl.trusttech</groupId>
     <artifactId>digital-credentials-verifier</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <classifier>shaded</classifier>
+    <version>1.0.0</version>
 </dependency>
 ```

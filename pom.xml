@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>nl.trusttech</groupId>
+    <artifactId>digital-credentials-verifier</artifactId>
+    <version>1.0.0</version>
+
+    <packaging>jar</packaging>
+    <name>Digital Credentials Verifier</name>
+    <description>OpenID4VP and mdoc verifier library</description>
+    <url>https://github.com/trusttech-nl/DigitalCredentialsVerifierJava</url>
+
+    <scm>
+        <connection>scm:git:https://github.com/trusttech-nl/DigitalCredentialsVerifierJava.git</connection>
+        <developerConnection>scm:git:git@github.com:trusttech-nl/DigitalCredentialsVerifierJava.git</developerConnection>
+        <url>https://github.com/trusttech-nl/DigitalCredentialsVerifierJava</url>
+    </scm>
+
+    <organization>
+        <name>Trusttech</name>
+        <url>https://trusttech.nl</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>sbrazhnik</id>
+            <name>Sergey Brazhnik</name>
+            <email>s.brazhnik@vanillagorilla.ai</email>
+        </developer>
+        <developer>
+            <id>vkhlyzova</id>
+            <name>Valeria Khlyzova</name>
+            <email>v.khlyzova@vanillagorilla.ai</email>
+        </developer>
+    </developers>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!--        https://github.com/authlete/sd-jwt-->
+        <dependency>
+            <groupId>com.authlete</groupId>
+            <artifactId>sd-jwt</artifactId>
+            <version>1.9</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>9.37</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.multipaz</groupId>
+            <artifactId>multipaz-jvm</artifactId>
+            <version>0.98.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.multipaz</groupId>
+            <artifactId>multipaz-doctypes-jvm</artifactId>
+            <version>0.98.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+
+                        <configuration>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <minimizeJar>true</minimizeJar>
+                            <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
+
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.multipaz</pattern>
+                                    <shadedPattern>nl.trusttech.shaded.multipaz</shadedPattern>
+                                </relocation>
+
+                                <relocation>
+                                    <pattern>com.google.gson</pattern>
+                                    <shadedPattern>nl.trusttech.shaded.gson</shadedPattern>
+                                </relocation>
+
+                                <relocation>
+                                    <pattern>com.authlete</pattern>
+                                    <shadedPattern>nl.trusttech.shaded.authlete</shadedPattern>
+                                </relocation>
+
+                                <relocation>
+                                    <pattern>com.nimbusds</pattern>
+                                    <shadedPattern>nl.trusttech.shaded.nimbusds</shadedPattern>
+                                </relocation>
+                            </relocations>
+
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.2</version>
+                <configuration>
+                    <source>17</source>
+                    <author>true</author>
+                    <version>true</version>
+                    <use>true</use>
+                    <linksource>true</linksource>
+                    <windowtitle>OpenID4VP and mdoc verifier v${project.version}</windowtitle>
+                    <doctitle>OpenID4VP and mdoc verifier v${project.version}</doctitle>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.2.7</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.7.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
