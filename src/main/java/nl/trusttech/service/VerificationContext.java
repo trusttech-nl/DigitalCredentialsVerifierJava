@@ -104,10 +104,6 @@ public class VerificationContext {
 
         DataItem sessionTranscript = new Tstr("");
         DeviceRequest request = buildDeviceRequest(sessionTranscript, null, "1.0", builder -> {
-
-            Map<String, Map<String, Boolean>> namespaces =
-                    Map.of(fields.nameSpace, fields.fields);
-
             // add issuer check in request
             ArrayList<ByteString> issueIdentifier = new ArrayList<>();
             issueIdentifier.add(new ByteString(asn1DerIssuerCert, 0, asn1DerIssuerCert.length));
@@ -115,7 +111,7 @@ public class VerificationContext {
             Map<String, DataItem> otherInfo = new HashMap<>();
             DocRequestInfo requestInfo = new DocRequestInfo(new ArrayList<>(), issueIdentifier, null, null, null, null, otherInfo);
 
-            builder.addDocRequest(fields.docType, namespaces, requestInfo);
+            builder.addDocRequest(fields.docType, fields.nameSpacesAndFields, requestInfo);
             return null;
         });
         var deviceRequestEncoded = Cbor.INSTANCE.encode(request.toDataItem());
@@ -163,23 +159,35 @@ public class VerificationContext {
         String namespace = getNamespaces(fields.docType);
         var nonceBase64Url = Base64.getEncoder().withoutPadding().encodeToString(nonce);
 
+
+
         List<Map<String, Object>> claims;
         Map<String, Object> meta;
         switch (format) {
             case MDOC -> {
-                claims = fields.fields.keySet().stream()
-                        .map(attributeName -> Map.<String, Object>of(
-                                "path", List.of(namespace, attributeName)
-                        ))
+//                claims = fields.fields.keySet().stream()
+//                        .map(attributeName -> Map.<String, Object>of(
+//                                "path", List.of(namespace, attributeName)
+//                        ))
+//                        .collect(Collectors.toList());
+                claims = fields.nameSpacesAndFields.entrySet().stream()
+                        .flatMap(entry -> {
+                            String localNamespace = entry.getKey();
+                            return entry.getValue().keySet().stream()
+                                    .map(val -> Map.<String, Object>of(
+                                            "path", List.of(localNamespace, val)
+                                    ));
+                        })
                         .collect(Collectors.toList());
                 meta = Map.of("doctype_value", fields.docType);
             }
             case DS_SD_JWT -> {
-                claims = fields.fields.keySet().stream()
-                        .map(attributeName -> Map.<String, Object>of(
-                                "path", List.of(attributeName)
-                        ))
-                        .collect(Collectors.toList());
+//                claims = fields.fields.keySet().stream()
+//                        .map(attributeName -> Map.<String, Object>of(
+//                                "path", List.of(attributeName)
+//                        ))
+//                        .collect(Collectors.toList());
+                claims = new ArrayList<>();
                 meta = Map.of("vct_values", List.of(fields.docType));
             }
             default -> {
@@ -585,6 +593,7 @@ public class VerificationContext {
 
     private Map<String, String> getDataFromResponse(Map<DataItem, DataItem> issuerSigned, String schemaId) {
         var nameSpacesMap = issuerSigned.get(new Tstr("nameSpaces")).getAsMap();
+        // todo add one more namespace
         var nameSpacesAr = nameSpacesMap.get(new Tstr(getNamespaces(schemaId))).getAsArray();
 
         HashMap<String, String> mapFields = new HashMap<>();
