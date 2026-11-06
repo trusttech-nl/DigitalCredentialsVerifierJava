@@ -598,7 +598,7 @@ public class VerificationContext {
         }
     }
 
-    private Map<String, String> getDataFromResponse(Map<DataItem, DataItem> issuerSigned, String schemaId) {
+    private Map<String, String> getDataFromResponse(Map<DataItem, DataItem> issuerSigned) {
         var nameSpacesMap = issuerSigned.get(new Tstr("nameSpaces")).getAsMap();
         Map<String, String> result = new HashMap<>();
         for (var namespace : nameSpacesMap.keySet()) {
@@ -609,8 +609,8 @@ public class VerificationContext {
         return result;
     }
 
-    private Map<String, String> extractNamespaceFields(Map<DataItem, DataItem> nameSpacesMap, String schemaId) {
-        var nameSpacesAr = nameSpacesMap.get(new Tstr(getNamespaces(schemaId))).getAsArray();
+    private Map<String, String> extractNamespaceFields(Map<DataItem, DataItem> nameSpacesMap, String namespace) {
+        var nameSpacesAr = nameSpacesMap.get(new Tstr(getNamespaces(namespace))).getAsArray();
         Map<String, String> mapFields = new HashMap<>();
 
         for (var nameSpace : nameSpacesAr) {
