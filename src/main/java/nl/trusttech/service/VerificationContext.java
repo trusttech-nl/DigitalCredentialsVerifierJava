@@ -160,7 +160,6 @@ public class VerificationContext {
         var nonceBase64Url = Base64.getEncoder().withoutPadding().encodeToString(nonce);
 
 
-
         List<Map<String, Object>> claims;
         Map<String, Object> meta;
         switch (format) {
@@ -187,7 +186,15 @@ public class VerificationContext {
 //                                "path", List.of(attributeName)
 //                        ))
 //                        .collect(Collectors.toList());
-                claims = new ArrayList<>();
+                claims = fields.nameSpacesAndFields.entrySet().stream()
+                        .flatMap(entry -> {
+                            String localNamespace = entry.getKey();
+                            return entry.getValue().keySet().stream()
+                                    .map(val -> Map.<String, Object>of(
+                                            "path", List.of(val)
+                                    ));
+                        })
+                        .collect(Collectors.toList());
                 meta = Map.of("vct_values", List.of(fields.docType));
             }
             default -> {
@@ -267,7 +274,7 @@ public class VerificationContext {
         List<Map<String, Object>> claims = new ArrayList<>();
         for (var credValue : credValues) {
             try {
-                var verificationRes = isJwt(credValue) ? verifyAndroidSdJwt(credValue) : verifyAndroidMdoc(credValue, sessionData);
+                var verificationRes = isJwt(credValue) ? verifyAndroidSdJwt(credValue, sessionData) : verifyAndroidMdoc(credValue, sessionData);
                 claims.add(verificationRes);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -385,7 +392,7 @@ public class VerificationContext {
 
         // ******************************************************************************************
         // obtain data from credential
-        var verificationData = getDataFromResponse(docIssuerSigned, EUPersonalID.EUPID_NAMESPACE);
+        var verificationData = getDataFromResponse(docIssuerSigned);
 
         // ******************************************************************************************
         // validating actual data - compare computed hashed with hashes from credential
@@ -593,10 +600,19 @@ public class VerificationContext {
 
     private Map<String, String> getDataFromResponse(Map<DataItem, DataItem> issuerSigned, String schemaId) {
         var nameSpacesMap = issuerSigned.get(new Tstr("nameSpaces")).getAsMap();
-        // todo add one more namespace
-        var nameSpacesAr = nameSpacesMap.get(new Tstr(getNamespaces(schemaId))).getAsArray();
+        Map<String, String> result = new HashMap<>();
+        for (var namespace : nameSpacesMap.keySet()) {
+            result.putAll(
+                    extractNamespaceFields(nameSpacesMap, namespace.getAsTstr())
+            );
+        }
+        return result;
+    }
 
-        HashMap<String, String> mapFields = new HashMap<>();
+    private Map<String, String> extractNamespaceFields(Map<DataItem, DataItem> nameSpacesMap, String schemaId) {
+        var nameSpacesAr = nameSpacesMap.get(new Tstr(getNamespaces(schemaId))).getAsArray();
+        Map<String, String> mapFields = new HashMap<>();
+
         for (var nameSpace : nameSpacesAr) {
             var credData = Cbor.INSTANCE.decode(((Bstr) ((Tagged) nameSpace).getTaggedItem()).getValue());
             var identifier = credData.get(new Tstr("elementIdentifier")).getAsTstr();
@@ -752,7 +768,7 @@ public class VerificationContext {
 
         // ******************************************************************************************
         // obtain data from credential
-        var verificationData = getDataFromResponse(docIssuerSigned, EUPersonalID.EUPID_NAMESPACE);
+        var verificationData = getDataFromResponse(docIssuerSigned);
 
         // ******************************************************************************************
         // validating actual data - compare computed hashed with hashes from credential
@@ -768,7 +784,7 @@ public class VerificationContext {
         );
     }
 
-    public Map<String, Object> verifyAndroidSdJwt(String credValue) throws Exception {
+    public Map<String, Object> verifyAndroidSdJwt(String credValue, VerificationSession sessionData) throws Exception {
         List<Map<String, Object>> verificationData = new ArrayList<>();
         Map<String, String> deviceKeyJwk = new LinkedHashMap<>();
 
@@ -806,9 +822,19 @@ public class VerificationContext {
                 );
 
 
+        Map<String, Object> request = (Map<String, Object>) sessionData.openidVP.get("request");
+        Map<String, Object> query = (Map<String, Object>) request.get("dcql_query");
+        List<Map<String, Object>> credentials = (List<Map<String, Object>>) query.get("credentials");
+        List<Map<String, Object>> sharedClaims = (List<Map<String, Object>>) credentials.get(0).get("claims");
         List<String> requiredClaimKeys = new ArrayList<>();
-        requiredClaimKeys.add("family_name");
-        requiredClaimKeys.add("given_name");
+        for (Map<String, Object> claim : sharedClaims) {
+            List<?> path = (List<?>) claim.get("path");
+
+            for (Object value : path) {
+                requiredClaimKeys.add((String) value);
+            }
+        }
+
         for (String claimKey : requiredClaimKeys) {
             Map<String, Object> item =
                     new HashMap<>();
