@@ -7,6 +7,7 @@ import nl.trusttech.credentials.CredentialRequestFields;
 import nl.trusttech.crypto.CryptoHelper;
 import nl.trusttech.crypto.JweEcDecryptor;
 import nl.trusttech.crypto.KeyFormattingHelper;
+import nl.trusttech.models.AndroidAttestationResult;
 import nl.trusttech.storage.ISessionStorage;
 import nl.trusttech.storage.VerificationSession;
 import nl.trusttech.utils.Utils;
@@ -398,6 +399,15 @@ public class VerificationContext {
         // validating actual data - compare computed hashed with hashes from credential
         var isValueDigestsValid = validateCredValuesHash(docIssuerSigned, pValue);
 
+        var attestation = verificationData.get("attestation");
+        Map<String, Object> attestationResult = null;
+        if (attestation != null) {
+            try {
+                attestationResult = IosAttestationService.checkIosAttest(attestation);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
 
         return Map.of(
                 "verificationData", verificationData,
@@ -405,9 +415,9 @@ public class VerificationContext {
                 "isDeviceAuthValid", isDeviceAuthValid,
                 "isValueDigestsValid", isValueDigestsValid,
                 "isCertificateChainValid", isCertificateChainValid,
-                "deviceKeyJwk", deviceKeyJwk
+                "deviceKeyJwk", deviceKeyJwk,
+                "attestation", attestationResult
         );
-
     }
 
     private boolean validateDeviceAuth(
@@ -774,13 +784,24 @@ public class VerificationContext {
         // validating actual data - compare computed hashed with hashes from credential
         var isValueDigestsValid = validateCredValuesHash(docIssuerSigned, pValue);
 
+        var attestation = verificationData.get("attestation");
+        AndroidAttestationResult attestationResult = null;
+        if (attestation != null) {
+            try {
+                attestationResult = AndroidAttestationService.checkAndroidAttest(attestation, deviceKeyJwk);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+
         return Map.of(
                 "verificationData", verificationData,
                 "isIssuerAuthValid", isIssuerAuthValid,
                 "isDeviceAuthValid", isDeviceAuthValid,
                 "isValueDigestsValid", isValueDigestsValid,
                 "isCertificateChainValid", isCertificateChainValid,
-                "deviceKeyJwk", deviceKeyJwk
+                "deviceKeyJwk", deviceKeyJwk,
+                "attestation", attestationResult
         );
     }
 
@@ -862,12 +883,23 @@ public class VerificationContext {
         var sd = claims.getClaims().get("_sd");
         boolean isValueDigestsValid = disclosures.stream().allMatch(x -> ((ArrayList) sd).contains(x.digest()));
 
+        var attestation = verificationData.stream()
+                .filter(item -> "attestation".equals(item.get("name")))
+                .findFirst()
+                .orElse(null);
+        AndroidAttestationResult attestationResult = null;
+        if (attestation != null) {
+            attestationResult = AndroidAttestationService.checkAndroidAttest(attestation.get("value").toString(), deviceKeyJwk);
+        }
+
+
         return Map.of(
                 "isIssuerAuthValid", isIssuerAuthValid,
                 "isDeviceAuthValid", isDeviceAuthValid,
                 "isValueDigestsValid", isValueDigestsValid,
                 "deviceKeyJwk", deviceKeyJwk,
-                "verificationData", verificationData
+                "verificationData", verificationData,
+                "attestation", attestationResult
                 //  TODO "isCertificateChainValid", isCertificateChainValid,
         );
     }
