@@ -6,7 +6,7 @@
 
     <groupId>nl.trusttech</groupId>
     <artifactId>digital-credentials-verifier</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <packaging>jar</packaging>
     <name>Digital Credentials Verifier</name>
@@ -196,7 +196,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
+                <version>0.8.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
