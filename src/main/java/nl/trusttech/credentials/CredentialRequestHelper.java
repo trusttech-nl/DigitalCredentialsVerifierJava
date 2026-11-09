@@ -39,8 +39,7 @@ public class CredentialRequestHelper {
                 namespacesAndValues.put(EUPersonalID.EUPID_NAMESPACE, Map.of(attrFamilyName, true, attrGivenName, true));
 
                 if (includeAttestation) {
-                    //namespacesAndValues.put(TRUST_TECH_NAMESPACE, Map.of(TRUST_TECH_ATTESTATION_ATTRIBUTE, true, TRUST_TECH_PLATFORM_ATTRIBUTE, true));
-                    namespacesAndValues.put(TRUST_TECH_NAMESPACE, Map.of(TRUST_TECH_ATTESTATION_ATTRIBUTE, true));
+                    namespacesAndValues.put(TRUST_TECH_NAMESPACE, Map.of(TRUST_TECH_ATTESTATION_ATTRIBUTE, true, TRUST_TECH_PLATFORM_ATTRIBUTE, true));
                 }
 
                 credentialRequestFields = new CredentialRequestFields(
